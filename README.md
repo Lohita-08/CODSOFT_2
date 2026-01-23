@@ -1,0 +1,2 @@
+# CODSOFT_2
+Project using HTML, CSS and JAVASCRIPT
