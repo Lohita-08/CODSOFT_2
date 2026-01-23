@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Online Quiz Maker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{margin:0;background:linear-gradient(135deg,#c7d2fe,#eef2ff,#f8fafc)}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{opacity:1}}
+.container{max-width:450px;margin:40px auto;background:#fff;padding:24px;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.12);animation:slideUp .45s}
+.hidden{display:none}
+h1,h2{text-align:center}
+p{text-align:center;color:#555}
+input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px}
+input{border:1px solid #ccc}
+button{background:#4f46e5;color:#fff;border:none;cursor:pointer;transition:.25s}
+button:hover{transform:scale(1.04)}
+.secondary{background:#eef2ff;color:#333}
+.password-box{position:relative}
+.password-box span{position:absolute;right:12px;top:14px;cursor:pointer}
+.captcha{display:flex;align-items:center;border:1px solid #ddd;padding:10px;border-radius:8px;margin:10px 0}
+.captcha input{width:auto;margin-right:8px}
+.quiz-card{border:1px solid #e5e7eb;padding:14px;border-radius:12px;margin:10px 0}
+.option{padding:14px;border:none;border-radius:14px;margin:12px 0;cursor:pointer;background:rgba(255,255,255,0.18);color:white;font-weight:500;backdrop-filter:blur(6px);transition:.3s}
+.option.active{background:#22c55e;color:white;transform:scale(1.04)}
+.progress{height:10px;background:#e5e7eb;border-radius:10px;overflow:hidden;margin:18px 0}
+.progress-bar{height:100%;width:0;background:#4f46e5;transition:width .4s}
+.footer{text-align:center;padding:15px;color:#666;font-size:14px}
+.confetti{position:fixed;width:8px;height:8px;top:-10px;animation:fall 2.5s linear infinite}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+</style>
+
+<script>
+/* ===== ALL JS FIRST (FIXES show() ERROR) ===== */
+let users={}
+let quizzes=[{
+name:'Engineering Aptitude Test',
+questions:[
+{q:'Which data structure follows FIFO?',options:['Stack','Queue','Tree','Graph'],a:1},
+{q:'Time complexity of merge sort?',options:['O(n)','O(log n)','O(n log n)','O(n²)'],a:2},
+{q:'Which language is used for web styling?',options:['HTML','Python','CSS','C++'],a:2},
+{q:'Binary search works on?',options:['Unsorted array','Sorted array','Graph','Tree'],a:1},
+{q:'CPU stands for?',options:['Central Processing Unit','Computer Personal Unit','Central Program Unit','Control Processing Unit'],a:0},
+{q:'Which is NOT an OS?',options:['Linux','Windows','Oracle','macOS'],a:2},
+{q:'SQL is used for?',options:['Styling','Database','Gaming','Networking'],a:1},
+{q:'HTML is?',options:['Programming','Markup','Database','OS'],a:1},
+{q:'Which uses LIFO?',options:['Queue','Stack','Array','List'],a:1},
+{q:'RAM is?',options:['Permanent','Temporary','Secondary','Optical'],a:1},
+{q:'IPv4 bits?',options:['16','32','64','128'],a:1},
+{q:'OOP concept?',options:['Encapsulation','Compilation','Linking','Scheduling'],a:0},
+{q:'Git is?',options:['IDE','OS','Version Control','Compiler'],a:2}
+]
+}]
+
+let currentQuiz=null,i=0,score=0,selected=null
+
+function show(id){document.querySelectorAll('.container').forEach(c=>c.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
+function toggle(id){let x=document.getElementById(id);x.type=x.type==='password'?'text':'password'}
+function registerUser(){users[ruser.value]=rpass.value;alert('Registered');show('login')}
+function login(){if(!cap.checked)return alert('Captcha required');if(users[luser.value]===lpass.value){show('home')}else alert('Invalid credentials')}
+function logout(){luser.value='';lpass.value='';cap.checked=false;show('login')}
+
+function loadQuizList(){quizCards.innerHTML='';quizzes.forEach((qz,idx)=>{
+ let card=document.createElement('div');card.className='quiz-card'
+ card.innerHTML=`<b>${qz.name}</b><button onclick="startQuiz(${idx})">Start</button> ${idx>0?`<button class='secondary' onclick='deleteQuiz(${idx})'>Delete</button>`:''}`
+ quizCards.appendChild(card)
+})}
+
+function deleteQuiz(i){quizzes.splice(i,1);loadQuizList()}
+function startQuiz(idx){currentQuiz=quizzes[idx];i=0;score=0;show('quiz');load()}
+
+function load(){let ques=currentQuiz.questions[i];q.innerText=ques.q;options.innerHTML='';selected=null;ques.options.forEach((opt,idx)=>{let d=document.createElement('div');d.className='option';d.innerText=opt;d.onclick=()=>{selected=idx;document.querySelectorAll('.option').forEach(o=>o.classList.remove('active'));d.classList.add('active')};options.appendChild(d)});bar.style.width=((i+1)/currentQuiz.questions.length)*100+'%'}
+
+function next(){if(selected===currentQuiz.questions[i].a)score++;i++;if(i<currentQuiz.questions.length)load();else resultPage()}
+
+function resultPage(){show('result');score.innerText='Your Score: '+score+' / '+currentQuiz.questions.length;confetti()}
+
+function confetti(){for(let i=0;i<40;i++){let c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=`hsl(${Math.random()*360},80%,60%)`;document.body.appendChild(c);setTimeout(()=>c.remove(),2500)}}
+
+function addQ(){
+ let qObj={q:cq.value,options:[o1.value,o2.value,o3.value,o4.value],a:parseInt(ca.value)-1}
+ if(!quizzes[1]) quizzes.push({name:'User Created Quiz',questions:[]})
+ quizzes[1].questions.push(qObj)
+ let total=quizzes[1].questions.length
+ addedQs.innerText=`Questions added: ${total}`
+ cbar.style.width=Math.min(total*10,100)+'%'
+ cq.value=o1.value=o2.value=o3.value=o4.value=ca.value=''
+ loadQuizList()
+}
+
+window.onload=()=>show('welcome')
+</script>
+</head>
+<body>
+
+<div class="container" id="welcome">
+<h1>🎓 Quiz Platform</h1>
+<p>Professional quizzes for college students</p>
+<button onclick="show('login')">Get Started</button>
+</div>
+
+<div class="container hidden" id="login">
+<h2>Login</h2>
+<input id="luser" placeholder="Username">
+<div class="password-box"><input type="password" id="lpass" placeholder="Password"><span onclick="toggle('lpass')">👁</span></div>
+<div class="captcha"><input type="checkbox" id="cap">I'm not a robot</div>
+<button onclick="login()">Login</button>
+<button class="secondary" onclick="show('register')">Register</button>
+</div>
+
+<div class="container hidden" id="register">
+<h2>Register</h2>
+<input id="ruser" placeholder="Username">
+<div class="password-box"><input type="password" id="rpass" placeholder="Password"><span onclick="toggle('rpass')">👁</span></div>
+<button onclick="registerUser()">Create Account</button>
+<button class="secondary" onclick="show('login')">Back</button>
+</div>
+
+<div class="container hidden" id="home">
+<h2>Home</h2>
+<button onclick="show('quizList');loadQuizList()">Available Quizzes</button>
+<button onclick="show('create')">Create Quiz</button>
+<button class="secondary" onclick="logout()">Logout</button>
+</div>
+
+<div class="container hidden" id="quizList">
+<h2>Available Quizzes</h2>
+<div id="quizCards"></div>
+<button class="secondary" onclick="show('home')">Back</button>
+</div>
+
+<div class="container hidden" id="quiz" style="background:linear-gradient(135deg,#4f46e5,#6366f1);color:white">
+<h2 id="q"></h2>
+<div id="options"></div>
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<button onclick="next()">Next</button>
+</div>
+
+<div class="container hidden" id="result">
+<h2>🎉 Congratulations!</h2>
+<h3 id="score">Your Score: 0</h3>
+<button onclick="show('home')">Go Home</button>
+</div>
+
+<div class="container hidden" id="create">
+<h2>Create Quiz</h2>
+<p style="text-align:center;color:#666">Add questions just like the default quiz</p>
+<input id="cq" placeholder="Question">
+<input id="o1" placeholder="Option 1">
+<input id="o2" placeholder="Option 2">
+<input id="o3" placeholder="Option 3">
+<input id="o4" placeholder="Option 4">
+<input id="ca" placeholder="Correct Option (1-4)">
+<div class="progress"><div class="progress-bar" id="cbar"></div></div>
+<button onclick="addQ()">Add Question</button>
+<div id="addedQs" style="margin-top:10px;font-size:14px;color:#333"></div>
+<button class="secondary" onclick="show('home')">Done</button>
+</div>
+
+<div class="footer">© 2026 Online Quiz Maker</div>
+</body>
+</html>
